@@ -101,34 +101,16 @@ class HashTable:
 				prev.next = prev.next.next # LinkedList delete by skipping over
 			# Return the deleted result 
 			return result
-		
-# TEST our own version of hash	
-# Creating an instance of HashTable
-hash_table = HashTable()
 
-# Inserting elements into the hash table
-hash_table.insert("key1", "value1")
-hash_table.insert("key2", "value2")
-hash_table.insert("key3", "value3")
+	# Print all hsah table entries sorted by their key value
+	def print(hash_table):
+		nodes = []
+		for i in range(INITIAL_CAPACITY):
+			node = hash_table.buckets[i]
+			while node:
+				nodes.append(node)
+				node = node.next
+		sorted_nodes = sorted(nodes, key=lambda node: int(node.key))
+		for node in sorted_nodes:
+			print(node.value)
 
-# Finding and printing an element in the hash table
-found_value = hash_table.lookup("key2")
-if found_value:
-    print(f"Found value: {found_value}")
-else:
-    print("Value not found.")
-
-# Removing an element from the hash table
-removed_value = hash_table.delete("key2")
-if removed_value:
-    print(f"Deleted value: {removed_value}")
-else:
-    print("Value not found or already deleted.")
-
-# Printing the current state of the hash table to check remaining elements
-print("Current state of the hash table:")
-for index, bucket in enumerate(hash_table.buckets):
-    if bucket is not None:
-        print(f"Bucket {index}: {bucket}")
-    else:
-        print(f"Bucket {index}: Empty")
