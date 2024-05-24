@@ -12,13 +12,14 @@ class Truck:
         self.departing_time = departing_time
         self.total_time = departing_time
        
-
+    # Load packages to packages list considering capacity limits
     def load_package_to_truck(self, package_id):
         if(len(self.packages) >= self.max_capacity):
             print("Truck is full and max capacity is 16, please don't load any packages to this truck anymore.")
         else:
             self.packages.append(package_id)
 
+    # to print truck details
     def __str__(self):
         return (f"Truck ID: {self.truck_id} | "
                 f"Packages: {[p for p in self.packages]}| "

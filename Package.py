@@ -15,7 +15,7 @@ class Package:
         self.delivery_time = None
         self.departing_time = None
         
-
+    # update package delivery status based on the query time and when the package is delivered or departed from hub.
     def update_package_status(self, input_time):
         if input_time > self.delivery_time:
             self.status = 'Delivered'
@@ -24,6 +24,7 @@ class Package:
         else:
             self.status = 'At the Hub'
 
+    # to print package details
     def __str__(self):
         return (f"Package ID: {self.package_id} | "
                 f"Address: {self.address}, {self.city},{self.state},{self.zip_code} | "
@@ -33,6 +34,7 @@ class Package:
                 f"Delivery Time: {self.delivery_time} | "
                 f"Special Note: {self.special_note}\n")
 
+# Loads packages to a hash table using the package_id as a key 
 def load_packages_into_package_hash_table(file_path, hash_table):
     with open(file_path, newline='') as csvfile:
         reader = csv.reader(csvfile)

@@ -3,12 +3,14 @@ import datetime, csv
 from HashTable import HashTable
 from Package import *
 from Truck import *
+import copy
 
+# Load distances from distance_data.csv to a 2D array / matrix
 def load_distance_matrix(file_path):
     with open(file_path, newline='') as csvfile:
         distance_matrix = list(csv.reader(csvfile))
     return distance_matrix
-
+# Load address info from address_data.csv to a hash table usigng the index as key
 def load_address_into_address_hash_table(file_path, hash_table):
     with open(file_path, newline='') as csvfile:
         reader = csv.reader(csvfile)
@@ -16,6 +18,8 @@ def load_address_into_address_hash_table(file_path, hash_table):
             index, location, address = row
             hash_table.insert(index, row)
 
+# Return the package and truck indexes retrieved via lookup from the address hash table  
+# Indexes are needed to get the distance between truck and package delivery locations
 def find_address_indices(address_hash_table, truck_address, package_address=None):
     truck_location_index = 0
     package_address_index = 0
@@ -34,28 +38,27 @@ def find_address_indices(address_hash_table, truck_address, package_address=None
 
 #for each truck calculate the nearest neighbor to minimize the traveled distance
 def deliver_using_nearest_neighbor(truck,package_hash_table,address_hash_table, distance_matrix ):
+    # add package id's in the truck to list_of_truck_packages to be able to calculate nearest location per package later
     list_of_truck_packages =[]
     for id in truck.packages:
         package = package_hash_table.lookup(str(id))
         list_of_truck_packages.append(package)
-
-    # truck.packages = []
-
-    while(len(list_of_truck_packages)):
-        nearest_distance = 1000000000000.0 #Assign to a large value
+ 
+    while(len(list_of_truck_packages) > 0):
+        nearest_distance = 1000000000000.0 #Assign to a large value 
         nearest_package = None # Assign 'nearest_package to 'None'
         
-        # This is the actual Nearest Neighbor Algorithm. The distance between each packages delivery address,
-        # and the current location of the truck is measured. The package with the smallest travel distance is
+        # Actual nearest neighbor algorithm starts here:
+        # It measures the distance between each packages delivery address and the current location of the truck and delivers the closest package. 
         for package in list_of_truck_packages:
             truck_location_index, package_address_index = find_address_indices(address_hash_table, truck.address, package.address)
 
             # Retrieve the distance between current location and packages destination address
-
             if truck_location_index <= package_address_index:
                 distance = float(distance_matrix[package_address_index][truck_location_index])
             else:
                 distance = float(distance_matrix[truck_location_index][package_address_index])
+            # Update nearest distance with minimum distance number each time
             if distance < nearest_distance:
                 nearest_distance = distance
                 nearest_package = package
@@ -147,23 +150,26 @@ def show_menu():
     print("5. Exit")  
 
 def main_menu(package_hash_table, trucks, total_miles, last_delivery_time):
+    package_hash_table_backup = copy.deepcopy(package_hash_table)
     while True:
+        package_hash_table = copy.deepcopy(package_hash_table_backup)
         show_menu()
         user_choice = input("Enter your choice: ")
 
         if user_choice == '1':
             input_time = input("Enter the time (HH:MM AM/PM) to check package status: ")
-            if input_time == '10:20 AM':
+            
+            time = convert_to_timedelta(input_time) 
+            if time >= datetime.timedelta(hours=10, minutes=20, seconds=0):
                 # Update incorrect address for package #9 at 10:20 AM
                 package_hash_table.lookup('9').address = "410 S State St"
-            time = convert_to_timedelta(input_time)  
             check_package_status(package_hash_table, time)
         elif user_choice == '2':
             input_time = input("Enter the time (HH:MM AM/PM) to check package status: ")
-            if input_time == '10:20 AM':
+            time = convert_to_timedelta(input_time) 
+            if time >= datetime.timedelta(hours=10, minutes=20, seconds=0):
                 # Update incorrect address for package #9 at 10:20 AM
                 package_hash_table.lookup('9').address = "410 S State St"
-            time = convert_to_timedelta(input_time) 
             for id in range(1, 41):
                 package = package_hash_table.lookup(str(id))
                 package.update_package_status(time)
@@ -205,23 +211,24 @@ def main():
 
     # Package assignments are done based on the requirements in package notes:
         # 3, 8, 36, 38 can only be in truck 2
-        # 6, 25, 28, 32 are delayed on flight---will not arrive to depot until 9:05 am
-        # if package_id 14:
-            #deliver 15 and 19
-        # if package_id 16:
-            #deliver 13 and 19
-        # if package_id 20:
-            #deliver 13 and 15
 
-    # Some packages have due dates
+        # 6, 25, 28, 32 are delayed on flight---will not arrive to depot until 9:05 am
+        # so load them to second truck while first one is able to leave at 8am
+
+        #packages below need to be delivered together and due to deadline they all loaded to truck 2
+        # if package_id 14:
+            #deliver with 15 and 19
+        # if package_id 16:
+            #deliver with 13 and 19
+        # if package_id 20:
+            #deliver with 13 and 15
+
+    # Some packages have due dates, they need to leave early with loaded to truck 1
 
     package_assignments = [
-    # [1, 30, 5, 7, 13, 14, 15, 16, 19, 20, 21, 29, 31, 34, 37, 40],
-    # [2, 3, 6, 8, 18, 25, 26, 27, 28, 4, 32, 33, 35, 36, 38],
-    # [10, 11, 12, 17, 22, 23, 24, 39, 9]
-    [29, 11, 32, 19, 7, 34, 10, 37, 20, 17, 27, 40, 24 ],
-	[4, 2, 25, 5, 15, 8, 16, 22, 26, 30, 28, 13, 18],
-	[14, 23, 33, 3, 12, 39, 35, 6, 38, 1, 31, 36, 9, 21]
+    [1,13,14,15,16,20,29,30,31,34,37,40],
+	[3,6,18,25,28,32,36,38,10,11,12,17,19],
+	[2,4,5,7,8,9,10,21,22,23,24,26,27,33,35,39]
     ]
 
     departure_times = [
